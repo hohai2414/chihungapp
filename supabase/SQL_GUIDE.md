@@ -123,3 +123,17 @@ Môi trường kiểm tra mô phỏng auth.users, auth.uid(), các role và bả
 
 Bản SQL được tạo lại từ migration gốc bằng `node scripts/build-sql-setup.mjs`.
 
+
+## Nhập danh sách nhân viên từ Excel
+
+Ứng dụng đã có đăng nhập email/mật khẩu Supabase. Danh sách nhân viên, bộ phận và chức vụ được đọc trực tiếp từ database, theo quyền RLS của tài khoản. Dashboard và sơ đồ tổ chức sử dụng các hồ sơ được phép xem. Dữ liệu localStorage cũ không được tự nhập vào Supabase.
+
+Thiết lập VITE_SUPABASE_URL và VITE_SUPABASE_PUBLISHABLE_KEY trong Vercel, rồi redeploy. Đăng nhập bằng tài khoản đã tạo trong Supabase Auth. Chỉ super_admin/hr_admin được thêm/xóa hồ sơ. Không có thao tác tạo tài khoản Auth hoặc phân quyền tự động từ dữ liệu Excel.
+
+Migration 004 cho phép email công việc trống và thêm ngày nghỉ việc, bộ phận nguồn, cấp bậc. Không tạo email giả. Chạy migration khi cần nhập dữ liệu không có email; các file setup đầy đủ đã bao gồm thay đổi này.
+
+File nhập chứa hồ sơ cá nhân được lưu trong private-imports/ và được .gitignore loại khỏi Git. Không đẩy file này hoặc bảng Excel lên GitHub. Chỉ chạy trong SQL Editor của dự án Supabase tương ứng. Script nhập cập nhật theo employee_code, giữ UUID và liên kết hiện có, không xóa hồ sơ khác. Script không chứa lương hoặc số tài khoản, và không nhập bảng công hoặc bảng lương.
+
+Sau khi nhập, đăng nhập ứng dụng và bấm Làm mới. Các hồ sơ đã có ngày nghỉ việc được đánh dấu Đã nghỉ việc theo thông tin trong nguồn. Không coi tình trạng trong bảng tính lịch sử là xác minh tình trạng nhân sự hiện tại.
+
+API AI cũ chưa có xác thực tương ứng nên thanh báo cáo AI mẫu chưa được hiển thị trong giao diện dùng dữ liệu thật. Các module ngoài danh sách nhân viên/tổ chức vẫn cần triển khai chức năng riêng.

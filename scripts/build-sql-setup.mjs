@@ -13,6 +13,8 @@ extra = extra.replace("values('OFFICE','Giờ hành chính','08:00','17:00',60);
 extra = extra.replace(/insert into public\.departments\(code,name\) values[\s\S]*?on conflict\(code\) do nothing;/, '');
 const organization = fs.readFileSync(new URL('migrations/003_organization.sql', root), 'utf8')
  .replace(/^begin;\r?\n/gm, '').replace(/^commit;\s*$/gm, '');
+const employeeImportSchema = fs.readFileSync(new URL('migrations/004_employee_import.sql', root), 'utf8')
+ .replace(/^begin;\r?\n/gm, '').replace(/^commit;\s*$/gm, '');
 let body = base + '\n' + extra + '\n' + organization;
 body = body.replace(/\bcreate table (?!if not exists)/gi, 'create table if not exists ')
  .replace(/\bcreate (unique )?index (?!if not exists)/gi, (_, unique) => `create ${unique || ''}index if not exists `)
@@ -24,6 +26,7 @@ body = body.replace(/alter table ([\w.]+) add constraint (\w+) ([^;]+);/gi, (_, 
 });
 body = body.replace(/^create policy (\w+) on ([\w.]+)/gm, (_, name, table) =>
  `drop policy if exists ${name} on ${table};\ncreate policy ${name} on ${table}`);
+body += '\n' + employeeImportSchema;
 // Reject a different attendance schema before installing functions or policies.
 const preflight = `do $setup$
 declare col text;
@@ -60,4 +63,3 @@ const legacySafe = `-- USE THIS FILE when legacy public.attendance has person/sh
  .replace(/public\.check_out\(/g, 'public.peopleops_check_out(');
 fs.writeFileSync(new URL('SETUP_KEEP_LEGACY_ATTENDANCE.sql', root), legacySafe);
 console.log('Generated SETUP_KEEP_LEGACY_ATTENDANCE.sql');
-
