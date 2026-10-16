@@ -13,20 +13,21 @@ create table leave_requests(id uuid primary key default gen_random_uuid(), emplo
 create table payrolls(id uuid primary key default gen_random_uuid(), employee_id uuid not null references employees(id) on delete restrict, period date not null, base_salary numeric(15,2) not null, allowance numeric(15,2) not null default 0, bonus numeric(15,2) not null default 0, deduction numeric(15,2) not null default 0, insurance numeric(15,2) not null default 0, tax numeric(15,2) not null default 0, status text not null default 'draft' check(status in ('draft','approved','paid')), unique(employee_id,period));
 create table audit_logs(id bigint generated always as identity primary key, actor_id uuid references auth.users(id), action text not null, entity_type text not null, entity_id text, metadata jsonb not null default '{}', ip inet, created_at timestamptz not null default now());
 
-create or replace function current_role() returns app_role language sql stable security definer set search_path=public as $$ select role from profiles where user_id=auth.uid() and active=true $$;
-create or replace function current_employee_id() returns uuid language sql stable security definer set search_path=public as $$ select employee_id from profiles where user_id=auth.uid() and active=true $$;
+create or replace function public.current_role() returns app_role language sql stable security definer set search_path=public as $$ select role from profiles where user_id=auth.uid() and active=true $$;
+create or replace function public.current_employee_id() returns uuid language sql stable security definer set search_path=public as $$ select employee_id from profiles where user_id=auth.uid() and active=true $$;
 
 alter table employees enable row level security; alter table contracts enable row level security; alter table attendance enable row level security; alter table leave_requests enable row level security; alter table payrolls enable row level security; alter table profiles enable row level security; alter table audit_logs enable row level security;
-create policy employee_read on employees for select using(current_role() in ('super_admin','hr_admin') or id=current_employee_id() or manager_id=current_employee_id());
-create policy employee_hr_write on employees for all using(current_role() in ('super_admin','hr_admin')) with check(current_role() in ('super_admin','hr_admin'));
-create policy contract_read on contracts for select using(current_role() in ('super_admin','hr_admin') or employee_id=current_employee_id());
-create policy contract_hr_write on contracts for all using(current_role() in ('super_admin','hr_admin')) with check(current_role() in ('super_admin','hr_admin'));
-create policy attendance_read on attendance for select using(current_role() in ('super_admin','hr_admin') or employee_id=current_employee_id() or exists(select 1 from employees e where e.id=attendance.employee_id and e.manager_id=current_employee_id()));
-create policy attendance_self_insert on attendance for insert with check(employee_id=current_employee_id());
-create policy leave_read on leave_requests for select using(current_role() in ('super_admin','hr_admin') or employee_id=current_employee_id() or exists(select 1 from employees e where e.id=leave_requests.employee_id and e.manager_id=current_employee_id()));
-create policy leave_self_create on leave_requests for insert with check(employee_id=current_employee_id());
-create policy payroll_private_read on payrolls for select using(current_role() in ('super_admin','hr_admin') or employee_id=current_employee_id());
-create policy payroll_hr_write on payrolls for all using(current_role() in ('super_admin','hr_admin')) with check(current_role() in ('super_admin','hr_admin'));
-create policy profile_self_read on profiles for select using(user_id=auth.uid() or current_role()='super_admin');
-create policy audit_admin_read on audit_logs for select using(current_role()='super_admin');
+create policy employee_read on employees for select using(public.current_role() in ('super_admin','hr_admin') or id=public.current_employee_id() or manager_id=public.current_employee_id());
+create policy employee_hr_write on employees for all using(public.current_role() in ('super_admin','hr_admin')) with check(public.current_role() in ('super_admin','hr_admin'));
+create policy contract_read on contracts for select using(public.current_role() in ('super_admin','hr_admin') or employee_id=public.current_employee_id());
+create policy contract_hr_write on contracts for all using(public.current_role() in ('super_admin','hr_admin')) with check(public.current_role() in ('super_admin','hr_admin'));
+create policy attendance_read on attendance for select using(public.current_role() in ('super_admin','hr_admin') or employee_id=public.current_employee_id() or exists(select 1 from employees e where e.id=attendance.employee_id and e.manager_id=public.current_employee_id()));
+create policy attendance_self_insert on attendance for insert with check(employee_id=public.current_employee_id());
+create policy leave_read on leave_requests for select using(public.current_role() in ('super_admin','hr_admin') or employee_id=public.current_employee_id() or exists(select 1 from employees e where e.id=leave_requests.employee_id and e.manager_id=public.current_employee_id()));
+create policy leave_self_create on leave_requests for insert with check(employee_id=public.current_employee_id());
+create policy payroll_private_read on payrolls for select using(public.current_role() in ('super_admin','hr_admin') or employee_id=public.current_employee_id());
+create policy payroll_hr_write on payrolls for all using(public.current_role() in ('super_admin','hr_admin')) with check(public.current_role() in ('super_admin','hr_admin'));
+create policy profile_self_read on profiles for select using(user_id=auth.uid() or public.current_role()='super_admin');
+create policy audit_admin_read on audit_logs for select using(public.current_role()='super_admin');
 create index employee_department_idx on employees(department_id); create index attendance_date_idx on attendance(work_date,employee_id); create index leave_status_idx on leave_requests(status,created_at); create index contract_expiry_idx on contracts(end_date) where end_date is not null;
+
