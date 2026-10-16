@@ -137,3 +137,15 @@ File nhập chứa hồ sơ cá nhân được lưu trong private-imports/ và �
 Sau khi nhập, đăng nhập ứng dụng và bấm Làm mới. Các hồ sơ đã có ngày nghỉ việc được đánh dấu Đã nghỉ việc theo thông tin trong nguồn. Không coi tình trạng trong bảng tính lịch sử là xác minh tình trạng nhân sự hiện tại.
 
 API AI cũ chưa có xác thực tương ứng nên thanh báo cáo AI mẫu chưa được hiển thị trong giao diện dùng dữ liệu thật. Các module ngoài danh sách nhân viên/tổ chức vẫn cần triển khai chức năng riêng.
+
+## Chấm công nhập từ bảng tính
+
+Mục Chấm công hiển thị bảng theo tháng, tìm theo mã/họ tên và lọc bộ phận. Bộ dữ liệu đầu tiên có kỳ 06/2025 nên màn hình mở ở tháng này; có thể chọn tháng khác. Dữ liệu được đọc từ peopleops_attendance theo RLS, không nhúng hồ sơ/chấm công trong mã frontend.
+
+Chạy toàn bộ file riêng tư private-imports/IMPORT_ATTENDANCE_2025_06.sql trong SQL Editor sau khi đã nhập nhân viên. File bao gồm schema bổ sung, không dùng bảng tạm và không cần UUID nhập tay. Khớp mã nhân viên với employees.employee_code; thiếu mã sẽ rollback. Có thể chạy lại mà giữ UUID bản ghi. Nếu ngày công đã có giờ check-in/out hoặc dữ liệu nguồn khác thì script dừng để đối chiếu, không ghi đè.
+
+Giữ riêng số giờ và mã công, ô trống là UNRECORDED. Không suy ra giờ check-in/out, tăng ca, vắng mặt hoặc ngày nghỉ từ các ô trống. Không biến TS/B thành phép năm, không trừ số dư phép hoặc tự tạo đơn nghỉ. Cột worked_hours chỉ chứa số giờ thật có trong bảng tính; mã P/2 không được tự coi là 4 giờ làm việc.
+
+Lưu source_file/source_sheet/source_cell/source_value để đối chiếu. Các cột giờ vào/ra hiện có được giữ nguyên; file nhập không đặt giờ giả. Bảng attendance legacy được giữ nguyên. Migration 005 cũng có thể bổ sung các cột trên schema chuẩn khi dùng chuỗi migration 001–005.
+
+Đã kiểm tra cục bộ: chạy lặp không trùng bản ghi, giữ nguyên ID, đối chiếu giờ/mã/ô trống với nguồn, từ chối mã nhân viên không khớp và xung đột với chấm công trực tiếp. Kiểm tra helper bao gồm tháng nhuận, chuyển năm và phân biệt số 0 với ô trống. Chưa thay thế việc kiểm tra dữ liệu sau khi nhập trên Supabase thật.

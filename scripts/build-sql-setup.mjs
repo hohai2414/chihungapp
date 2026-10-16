@@ -27,6 +27,9 @@ body = body.replace(/alter table ([\w.]+) add constraint (\w+) ([^;]+);/gi, (_, 
 body = body.replace(/^create policy (\w+) on ([\w.]+)/gm, (_, name, table) =>
  `drop policy if exists ${name} on ${table};\ncreate policy ${name} on ${table}`);
 body += '\n' + employeeImportSchema;
+const attendanceImportSchema=fs.readFileSync(new URL('migrations/005_attendance_import.sql', root),'utf8')
+ .replace(/^begin;\r?\n/gm,'').replace(/^commit;\s*$/gm,'').replace(/\bpeopleops_attendance\b/g,'attendance');
+body += '\n' + attendanceImportSchema;
 // Reject a different attendance schema before installing functions or policies.
 const preflight = `do $setup$
 declare col text;
