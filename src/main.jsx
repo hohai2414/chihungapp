@@ -5,6 +5,7 @@ import{LayoutDashboard,Users,Clock3,CalendarDays,FileSignature,WalletCards,Targe
 import'./style.css';
 import Organization from './Organization.jsx';
 import Attendance from './Attendance.jsx';
+import ChatWidget from './ChatWidget.jsx';
 import { organizationDepartments } from './organization.js';
 import AuthGate from './AuthGate.jsx';
 import usePeopleData from './usePeopleData.js';
@@ -38,7 +39,7 @@ function App({user}){
   <main><header><button className="menu" onClick={()=>setMobile(true)}><PanelLeft/></button><div className="global"><Search/><input placeholder="Tìm nhân viên, tài liệu, chức năng..."/><kbd>⌘ K</kbd></div><div className="header-actions"><button className="secondary" onClick={()=>supabase.auth.signOut().then(({error})=>error&&notify(error.message))}>Đăng xuất</button><div className="head-avatar">{accountName?.slice(0,2).toUpperCase()}</div><div className="who"><strong>{accountName}</strong><span>{accountRole}</span></div><ChevronDown/></div></header>
   <section className="content">{error&&<div className="data-error" role="alert">{error} <button onClick={refresh}>Thử lại</button></div>}<div className="data-status"><span>{loading?'Đang tải danh sách…':'Dữ liệu từ Supabase · '+employees.length+' hồ sơ bạn được phép xem'}</span><button className="secondary" onClick={refresh} disabled={loading}>Làm mới</button></div>{page==='Tổng quan'?<Dashboard setPage={setPage} employees={employees} canManage={canManage}/>:page==='Nhân viên'?<Employees departmentOptions={departmentOptions} data={filtered} query={query} setQuery={setQuery} filter={filter} setFilter={setFilter} onAdd={()=>{setFormError('');setModal(true)}} onDelete={onDelete} canManage={canManage}/>:page==='Tổ chức'?<Organization employees={employees} onViewEmployees={department=>{setFilter(department);setQuery('');setPage('Nhân viên')}}/>:page==='Chấm công'?<Attendance employees={employees}/>:<Module page={page}/>}</section></main>
   {modal&&<div className="overlay" onMouseDown={e=>e.target===e.currentTarget&&setModal(false)}><form className="modal" onSubmit={add}><div className="modal-head"><div><span>HỒ SƠ MỚI</span><h2>Thêm nhân viên</h2></div><button type="button" onClick={()=>setModal(false)}><X/></button></div><div className="form-grid"><label>Họ và tên<input name="name" required minLength="3" placeholder="Nguyễn Văn An"/></label><label>Email công việc<input type="email" name="email" placeholder="an@congty.vn"/></label><label>Số điện thoại<input name="phone" type="tel" maxLength="20" placeholder="090 123 4567"/></label><label>Phòng ban<select name="dept">{organizationDepartments.map(d=><option key={d.code} value={d.name}>{d.name}</option>)}</select></label><label className="wide">Chức vụ<input name="role" required placeholder="Chuyên viên"/></label></div><div className="modal-actions">{formError&&<p className="data-error" role="alert">{formError}</p>}<button type="button" className="secondary" onClick={()=>setModal(false)}>Hủy</button><button className="primary" disabled={saving}><Plus/>{saving?'Đang lưu…':'Thêm nhân viên'}</button></div></form></div>}
-  {toast&&<div className="toast"><CheckCircle2/>{toast}</div>}
+  <ChatWidget/>{toast&&<div className="toast"><CheckCircle2/>{toast}</div>}
  </div>
 }
 function Dashboard({setPage,employees,canManage}){
